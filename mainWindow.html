@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Task List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+    <style>
+        #safe {
+            display: none;
+            margin-right: 3em;
+        }
+        .collection-item {
+            font-size: 1.15em;
+        }
+        #success {
+            font-weight: bold;
+            font-size: 1.12em;
+            text-align: center;
+            border: 1px solid black;
+            border-radius: 3px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-wrapper">
+            <a class="brand-logo center">Task List</a>
+        </div>
+    </nav>
+    <div id="success">File Saved Successfully</div>
+    <ul></ul>
+    <div class="center-align">
+        <button class="btn waves-effect waves-light red" id="safe">Save File</button>
+        <button class="btn waves-effect waves-light red" id='open'>Open File</button>
+    </div>
+    <script>
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+        const ul = document.querySelector('ul');
+        const app = require('electron').remote;
+        const dialog = app.dialog;
+        const fs = require('fs');
+
+        // Add Item
+        ipcRenderer.on('item:add', function(e, item){
+            ul.className = 'collection';
+            const li = document.createElement('li');
+            li.className = 'collection-item';
+            const itemText = document.createTextNode(item);
+            li.appendChild(itemText);
+            ul.appendChild(li);
+            document.getElementById('safe').style.display = "inline-block";
+            document.getElementById('success').style.display = "none";
+        });
+
+        // Clear Items
+        ipcRenderer.on('item:clear', function(){
+            ul.innerHTML = '';
+            ul.className = '';
+            document.getElementById('safe').style.display = "none";
+            document.getElementById('success').style.display = "none";
+        });
+
+        // Remove item
+        ul.addEventListener('dblclick', removeItem);
+
+        function removeItem(e){
+            e.target.remove();
+            if(ul.children.length == 0) {
+                ul.className = '';
+                document.getElementById('safe').style.display = "none";
+            }
+            document.getElementById('success').style.display = "none";
+        }
+
+        // Save File
+        document.getElementById('safe').addEventListener('click', saveFile);
+        
+        function saveFile(){
+            dialog.showSaveDialog((filename)=>{
+                if (filename === undefined){
+                    alert("You didn't enter in a file name!")
+                    return;
+                }
+                const i = document.getElementsByClassName('collection-item');
+                const content = [];
+                for (o = 0; o < i.length; o++) {
+                    content.push(i[o].innerHTML);
+                }
+                fs.writeFile(filename, content, (err)=>{
+                    if (err) console.log(err)
+                    document.getElementById('success').style.display = "block";
+                })
+            })
+        }
+
+        // Open file then read file then split data then write to list
+        document.getElementById('open').addEventListener('click', openfile);
+
+        function openfile(){
+            dialog.showOpenDialog((filenames) =>{
+                if(filenames === undefined){
+                    alert("no files were selected");
+                    return;
+                }
+                readFile(filenames[0]);
+            })
+        }
+
+        function readFile(filepath){
+            fs.readFile(filepath, 'utf-8', (err, data) =>{
+                if (err){
+                    alert("There was an error");
+                    return;
+                }
+                while (document.getElementsByClassName('collection-item').length > 0) {
+                    const elem = document.querySelector('.collection-item');
+                    elem.parentNode.removeChild(elem);
+                }
+                const obtainData = data;
+                const splitData = obtainData.split(",");
+                for (var i = 0; i < splitData.length; i++) {
+                    ul.className = 'collection';
+                    const li = document.createElement('li');
+                    li.className = 'collection-item';
+                    ul.appendChild(li);
+                    document.getElementsByTagName("li")[i].innerHTML = splitData[i];
+                }
+                document.getElementById('safe').style.display = "inline-block";
+                document.getElementById('success').style.display = "none";
+            })
+        }
+    </script>
+</body>
+</html>

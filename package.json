@@ -1,0 +1,14 @@
+{
+  "name": "tasklist",
+  "version": "1.0.0",
+  "description": "Task List",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Breven Hinckley",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^1.7.9"
+  }
+}
